@@ -1,3 +1,3 @@
 # FEH ENGR 1282.01 Spring 2017
 
-This repository contains all the code for Team A2's robot project.
+Any edits to main will be made in this branch to be tested and finalized later.
