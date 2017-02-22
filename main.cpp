@@ -8,7 +8,7 @@
 // Motors
 FEHMotor left_motor(FEHMotor::Motor1, 12.0);
 FEHMotor right_motor(FEHMotor::Motor3, 12.0);
-//FEHServo arm(FEHServo::);
+FEHServo arm(FEHServo::Servo0);
 
 //Encoders
 /*
@@ -40,20 +40,20 @@ const double right_threshold = ;
 
 bool touch_start() // Wait for screen touch
 {
-	float x, y;
-	bool temp = false;
-	while(!temp) {
-		if(LCD.Touch(&x, &y)) {
-			temp = true;
-		}
-	}
+    float x, y;
+    bool temp = false;
+    while(!temp) {
+        if(LCD.Touch(&x, &y)) {
+            temp = true;
+        }
+    }
 }
 
 
 
-void drive(percent, counts)
-{	
-	// Reset encoder counts
+/*void drive(int percent, int counts)
+{
+    // Reset encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
 
@@ -115,12 +115,15 @@ void turn_right(int percent, int counts) // using encoders
     right_motor.Stop();
     left_motor.Stop();
 }
-
+*/
 
 
 int main() {
-	LCD.Clear(FEHLCD::Black);
-	LCD.SetFontColor(FEHLCD::White);
-	
-	return 0;
+    LCD.Clear(FEHLCD::Black);
+    LCD.SetFontColor(FEHLCD::White);
+
+    arm.SetMin(500);
+    arm.SetMax(2480);
+
+    return 0;
 }
