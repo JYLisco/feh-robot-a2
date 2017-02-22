@@ -24,8 +24,8 @@ DigitalInputPin back_left(FEHIO::);
 DigitalInputPin back_right(FEHIO::);
 /*
 
-// CdS Cell
-//AnalogInputPin cds_cell(FEHIO::);
+//CdS Cell
+AnalogInputPin cds_cell(FEHIO::);
 
 // Optosensors
 /*
@@ -37,6 +37,7 @@ const double left_threshold = ;
 const double middle_threshold = ;
 const double right_threshold = ;
 */
+const double light_red = 0.2;
 
 bool touch_start() // Wait for screen touch
 {
@@ -47,6 +48,18 @@ bool touch_start() // Wait for screen touch
             temp = true;
         }
     }
+}
+
+bool light_start()
+{
+    bool start = false;
+    while(!start){
+        if (abs(cds_cell.Value() - light_red) <= .15)
+        {
+            start = true;
+        }
+    }
+    return light_start();
 }
 
 
