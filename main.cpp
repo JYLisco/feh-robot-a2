@@ -35,8 +35,8 @@ const double left_threshold = ;
 const double middle_threshold = ;
 const double right_threshold = ;
 */
-const int sleep_time = 500;
 
+const int sleep_time = 500;
 
 bool touch_start() // Wait for screen touch
 {
@@ -48,6 +48,18 @@ bool touch_start() // Wait for screen touch
         }
     }
     return temp;
+}
+
+bool light_start()
+{
+    bool start = false;
+    while(!start){
+        if (abs(cds_cell.Value() - light_red) <= .15)
+        {
+            start = true;
+        }
+    }
+    return light_start();
 }
 
 
