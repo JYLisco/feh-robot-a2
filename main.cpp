@@ -23,7 +23,7 @@ DigitalInputPin back_left(FEHIO::);
 DigitalInputPin back_right(FEHIO::);
 */
 
-AnalogInputPin cds_cell(FEHIO::P2_7); // CdS Cell
+AnalogInputPin cds_cell(FEHIO::P1_1); // CdS Cell
 
 // Optosensors
 /*
@@ -169,6 +169,7 @@ void test_encoder_counts()
 int main() {
     LCD.Clear(FEHLCD::Black);
     LCD.SetFontColor(FEHLCD::White);
+    LCD.WriteLine("Running."); // Test
 
     // Set the min and max values for the arm's servo motor.
     arm.SetMin(500);
