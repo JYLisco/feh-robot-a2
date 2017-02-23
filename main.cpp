@@ -36,30 +36,50 @@ const double middle_threshold = ;
 const double right_threshold = ;
 */
 
-const int sleep_time = 500;
+const int sleep_time = 200; // sleep between drive functions
 
 bool touch_start() // Wait for screen touch
 {
     float x, y;
     bool temp = false;
-    while(!temp) {
-        if(LCD.Touch(&x, &y)) {
-            temp = true;
-        }
+    if(LCD.Touch(&x, &y))
+    {
+        temp = true;
     }
     return temp;
 }
 
-bool light_start()
+const double red_light = 0.3; // max value
+const double blue_light = 0.7; // max value
+
+bool light_start() // detects if light is on or off
 {
     bool start = false;
-    while(!start){
-        if (abs(cds_cell.Value() - light_red) <= .15)
-        {
-            start = true;
-        }
+    if (cds_cell.Value() < red_light)
+    {
+        start = true;
     }
-    return light_start();
+    return start;
+}
+
+int red_or_blue_light() // detects if light is red or blue
+{
+    int light = 0;
+    if(cds_cell.Value() < 0.2)
+    {
+        LCD.WriteLine("Light is red."); // return 1
+        light = 1;
+    }
+    else if(cds_cell.Value() < 0.7)
+    {
+        LCD.WriteLine("Light is blue."); // return 2
+        light = 2;
+    }
+    else
+    {
+        LCD.WriteLine("No light is detected."); // return 0;
+    }
+    return light;
 }
 
 
@@ -150,16 +170,20 @@ int main() {
     int right_percent = 25;
     int percent = 25;
 
+    // wait for light to turn on or 20 seconds to pass
+    int start_time = TimeNow();
+    while(!light_start() && TimeNow() - start_time < 20.0);
 
 
-    drive(left_percent, right_percent, 405); // 10 inches
+
+    drive(left_percent, right_percent, 405); // 10 inches forward
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    turn_left(left_percent, right_percent, left_turn_counts);
+    turn_left(left_percent, right_percent, left_turn_counts); // turn left
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
@@ -173,42 +197,63 @@ int main() {
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    turn_left(left_percent, right_percent, left_turn_counts);
+    turn_left(left_percent, right_percent, left_turn_counts); // turn left
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    drive(left_percent, right_percent, 1215); // 30 inches
+    drive(left_percent, right_percent, 1215); // 30 inches forward
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    turn_right(left_percent, right_percent, right_turn_counts);
+    turn_right(left_percent, right_percent, right_turn_counts); // turn right
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    drive(left_percent, right_percent, 324); // 8 inches
+    drive(left_percent, right_percent, 324); // 8 inches forward
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    turn_right(left_percent, right_percent, right_turn_counts);
+    turn_right(left_percent, right_percent, right_turn_counts); // turn right
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    drive(-left_percent, -right_percent, 810); // 10 inches
+    drive(-left_percent, -right_percent, 810); // 10 inches backward
+    LCD.Write("LE: ");
+    LCD.WriteLine(left_encoder.Counts());
+    LCD.Write("RE: ");
+    LCD.WriteLine(right_encoder.Counts());
+    LCD.WriteLine(" ");
+
+    drive(left_percent, right_percent, 810); // 10 inches forward
+    LCD.Write("LE: ");
+    LCD.WriteLine(left_encoder.Counts());
+    LCD.Write("RE: ");
+    LCD.WriteLine(right_encoder.Counts());
+    LCD.WriteLine(" ");
+
+    turn_right(left_percent, right_percent, right_turn_counts); // turn right
+    LCD.Write("LE: ");
+    LCD.WriteLine(left_encoder.Counts());
+    LCD.Write("RE: ");
+    LCD.WriteLine(right_encoder.Counts());
+    LCD.WriteLine(" ");
+
+    drive(left_percent, right_percent, ???); // unknown
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
