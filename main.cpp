@@ -239,7 +239,7 @@ int main() {
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    drive(left_percent, right_percent, 810); // 10 inches forward
+    drive(left_percent, right_percent, 486); // 12 inches forward
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
@@ -253,7 +253,7 @@ int main() {
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 
-    drive(left_percent, right_percent, ???); // unknown
+    drive(left_percent, right_percent, 608); // 15 inches
     LCD.Write("LE: ");
     LCD.WriteLine(left_encoder.Counts());
     LCD.Write("RE: ");
