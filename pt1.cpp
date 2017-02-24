@@ -10,9 +10,17 @@ FEHMotor left_motor(FEHMotor::Motor1, 12.0);
 FEHMotor right_motor(FEHMotor::Motor3, 12.0);
 FEHServo arm(FEHServo::Servo0);
 
-//Encoders
+const int motor_left_percent = 25; //Motor Speed percentage for the left motor.
+const int motor_right_percent = 25; //Motor Speed percentage for the right motor.
+const int arm_Min = 500;
+const int arm_Max = 2480;
+
+
+// Encoders
 DigitalEncoder right_encoder(FEHIO::P0_0);
 DigitalEncoder left_encoder(FEHIO::P0_7);
+
+const int encoder_inch = 40; // Number of encoder counts for a single inch.
 
 
 // Bump Switches
@@ -24,6 +32,9 @@ DigitalInputPin back_right(FEHIO::);
 */
 
 AnalogInputPin cds_cell(FEHIO::P1_1); // CdS Cell
+
+const double red_light = 0.3; // max value
+const double blue_light = 0.7; // max value
 
 // Optosensors
 /*
@@ -37,12 +48,11 @@ const double right_threshold = ;
 */
 
 
-const int sleep_time = 200; //The amount of time to sleep between functions.
-const int right_turn_counts = 235; //Expected encoder counts for the right IGWAN motor.
-const int left_turn_counts = 225; //Expected encoder counts for the left IGWAN motor.
-const int motor_left_percent = 25; //Motor Speed percentage for the left motor.
-const int motor_right_percent = 25; //Motor Speed percentage for the right motor.
-const int percent = 25; //General motor percentage.
+const int sleep_time = 200; // The amount of time to sleep between functions.
+const int right_turn_counts = 235; // Expected encoder counts for the right IGWAN motor.
+const int left_turn_counts = 225; // Expected encoder counts for the left IGWAN motor.
+
+
 
 bool touch_start() // Wait for screen touch
 {
@@ -69,7 +79,7 @@ bool light_start()
     return start;
 }
 
-  // Detects whether the light is red or blue. Returns a string describing the detected light or a default case.
+// Detects whether the light is red or blue. Returns a string describing the detected light or a default case.
 int light_red_or_blue()
 {
     int light = 0;
@@ -91,68 +101,71 @@ int light_red_or_blue()
 }
 
 
-  // Drive forward a set distance
+// Drive forward a set distance
 void drive(int motor_left_percent, int motor_right_percent, int counts)
 {
-      // Reset the left and right encoder counts
+    // Reset the left and right encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
 
-      // Set the right motor to positive right percentage value, and the left motor to the positive left percentage value.
+    // Set the right motor to positive right percentage value, and the left motor to the positive left percentage value.
     right_motor.SetPercent(motor_right_percent);
     left_motor.SetPercent(motor_left_percent);
 
-      // While the average value of the left and right encoder counts is less than the expected count value, keep running both motors.
+    // While the average value of the left and right encoder counts is less than the expected count value, keep running both motors.
     while((left_encoder.Counts() + right_encoder.Counts()) / 2. < counts);
 
-      // Turn both motors off.
+    // Turn both motors off.
     right_motor.Stop();
     left_motor.Stop();
 
+    test_encoder_counts();
     Sleep(sleep_time);
 }
 
 
-  // Turn left a set amount based on the encoder counts
+// Turn left a set amount based on the encoder counts
 void turn_left(int motor_left_percent, int motor_right_percent, int counts)
 {
-      // Reset the left and right encoder counts
+    // Reset the left and right encoder counts
     right_encoder.ResetCounts();
     left_encoder.ResetCounts();
 
-      // Set the right motor to positive right percentage value, and the left motor to the negative left percentage value.
+    // Set the right motor to positive right percentage value, and the left motor to the negative left percentage value.
     right_motor.SetPercent(motor_right_percent);
     left_motor.SetPercent(-motor_left_percent);
 
-      // While the average value of the left and right encoder counts is less than the expected count value, keep running both motors.
-    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
-
-      // Turn both motors off.
-    right_motor.Stop();
-    left_motor.Stop();
-
-    Sleep(sleep_time);
-}
-
-
-  // Turn right a set amount based on the encoder counts
-void turn_right(int motor_left_percent, int motor_right_percent, int counts) // using encoders
-{
-      // Reset the left and right encoder counts
-    right_encoder.ResetCounts();
-    left_encoder.ResetCounts();
-
-      // Set the right motor to negative right percentage value, and the left motor to the positive left percentage value.
-    right_motor.SetPercent(-motor_right_percent);
-    left_motor.SetPercent(motor_left_percent);
-
-      // While the average value of the left and right encoder counts is less than the expected count value, keep running both motors.
+    // While the average value of the left and right encoder counts is less than the expected count value, keep running both motors.
     while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
 
     // Turn both motors off.
     right_motor.Stop();
     left_motor.Stop();
 
+    test_encoder_counts();
+    Sleep(sleep_time);
+}
+
+
+// Turn right a set amount based on the encoder counts
+void turn_right(int motor_left_percent, int motor_right_percent, int counts) // using encoders
+{
+    // Reset the left and right encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    // Set the right motor to negative right percentage value, and the left motor to the positive left percentage value.
+    right_motor.SetPercent(-motor_right_percent);
+    left_motor.SetPercent(motor_left_percent);
+
+    // While the average value of the left and right encoder counts is less than the expected count value, keep running both motors.
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+
+    // Turn both motors off.
+    right_motor.Stop();
+    left_motor.Stop();
+
+    test_encoder_counts();
     Sleep(sleep_time);
 }
 
@@ -166,68 +179,95 @@ void test_encoder_counts()
     LCD.WriteLine(" ");
 }
 
+void servo_calibrate()
+{
+    // Around 90 degrees seems like a good starting point
+
+    arm.SetDegree(0);
+    Sleep(2000);
+    arm.SetDegree(180);
+    Sleep(2000);
+
+    int degree = 90;
+    arm.SetDegree(90);
+
+    float x, y;
+    while(true)
+    {
+        if(LCD.Touch(&x, &y))
+        {
+            if(x < 160)
+            {
+                degree -= 5;
+                arm.SetDegree(degree);
+
+            }
+            else
+            {
+                degree += 5;
+                arm.SetDegree(degree);
+            }
+            LCD.Write("degree: ");
+            LCD.WriteLine(degree);
+            LCD.Write("x: ");
+            LCD.WriteLine(x);
+        }
+        Sleep(200);
+
+    }
+}
+
+
 int main() {
     LCD.Clear(FEHLCD::Black);
     LCD.SetFontColor(FEHLCD::White);
-    LCD.WriteLine("Running."); // Test
 
-    // Set the min and max values for the arm's servo motor.
-    arm.SetMin(500);
-    arm.SetMax(2480);
+    arm.SetMin(arm_Min);
+    arm.SetMax(arm_Max);
 
-    // Start a timer and enter a loop. Call the light_start() method. When that method returns true or 20 seconds have passed, end the loop.
+
+    // Start a timer and enter a loop. Call the light_start() method. 
+    // When that method returns true or 20 seconds have passed, end the loop.
     int start_time = TimeNow();
     while(!light_start() && TimeNow() - start_time < 20.0);
 
 
     // Drive out of the starting area and go forward 10 inches.
     drive(motor_left_percent, motor_right_percent, 405);
-    test_encoder_counts();
 
     // Turn left towards the ramp
     turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    test_encoder_counts();
 
     // Drive towards the ramp, going forward 12 inches.
     drive(motor_left_percent, motor_right_percent, 486);
-    test_encoder_counts();
 
     // Turn left to face the ramp
     turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    test_encoder_counts();
 
     // Drive up the ramp, going forward 30 inches.
     drive(motor_left_percent + 1, motor_right_percent, 1215);
-    test_encoder_counts();
 
     // Turn right towards the wall
     turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    test_encoder_counts();
 
     // Drive towards the wall, going forward 8 inches.
     drive(motor_left_percent, motor_right_percent, 324);
-    test_encoder_counts();
 
     // Turn right, back faces the button
     turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    test_encoder_counts();
 
     // Back into the button, going backwards 10 inches.
     drive(-motor_left_percent, -motor_right_percent, 810);
-    test_encoder_counts();
     Sleep(8000);
 
     // Drive forwards from the button, going forward 16 inches.
     drive(motor_left_percent, motor_right_percent, 648);
-    test_encoder_counts();
 
     // Turn right, facing the lever
     turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    test_encoder_counts();
 
     // Drive forwards towards the lever, forward 15 inches.
     drive(motor_left_percent, motor_right_percent, 608);
-    test_encoder_counts();
 
     return 0;
 }
