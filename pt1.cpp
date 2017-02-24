@@ -38,11 +38,18 @@ const double right_threshold = ;
 
 
 const int sleep_time = 200; //The amount of time to sleep between functions.
-const int right_turn_counts = 235; //Expected encoder counts for the right IGWAN motor.
-const int left_turn_counts = 225; //Expected encoder counts for the left IGWAN motor.
+const int encoder_right_turn = 235; //Expected encoder counts for the right IGWAN motor.
+const int encoder_left_turn = 225; //Expected encoder counts for the left IGWAN motor.
 const int motor_left_percent = 25; //Motor Speed percentage for the left motor.
 const int motor_right_percent = 25; //Motor Speed percentage for the right motor.
 const int percent = 25; //General motor percentage.
+const int encoder_inch = 40; //Number of encoder counts for a single inch.
+const int arm_Min = 500;
+const int arm_Max = 2480;
+
+
+const double red_light = 0.3; // max value
+const double blue_light = 0.7; // max value
 
 bool touch_start() // Wait for screen touch
 {
@@ -55,8 +62,6 @@ bool touch_start() // Wait for screen touch
     return temp;
 }
 
-const double red_light = 0.3; // max value
-const double blue_light = 0.7; // max value
 
   // Detects the starting red light, wait and returns true when detected.
 bool light_start()
@@ -109,6 +114,8 @@ void drive(int motor_left_percent, int motor_right_percent, int counts)
     right_motor.Stop();
     left_motor.Stop();
 
+    test_encoder_counts();
+
     Sleep(sleep_time);
 }
 
@@ -130,6 +137,8 @@ void turn_left(int motor_left_percent, int motor_right_percent, int counts)
       // Turn both motors off.
     right_motor.Stop();
     left_motor.Stop();
+
+    test_encoder_counts();
 
     Sleep(sleep_time);
 }
@@ -153,6 +162,8 @@ void turn_right(int motor_left_percent, int motor_right_percent, int counts) // 
     right_motor.Stop();
     left_motor.Stop();
 
+    test_encoder_counts();
+
     Sleep(sleep_time);
 }
 
@@ -165,6 +176,88 @@ void test_encoder_counts()
     LCD.WriteLine(right_encoder.Counts());
     LCD.WriteLine(" ");
 }
+void P_Test_1()
+{
+    // Drive out of the starting area and go forward 10 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 10));
+
+    // Turn left towards the ramp
+    turn_left(motor_left_percent, motor_right_percent, encoder_left_turn);
+
+    // Drive towards the ramp, going forward 12 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 12));
+    test_encoder_counts();
+
+    // Turn left to face the ramp
+    turn_left(motor_left_percent, motor_right_percent, encoder_left_turn);
+
+    // Drive up the ramp, going forward 30 inches.
+    drive(motor_left_percent + 1, motor_right_percent, (encoder_inch * 30));
+
+    // Turn right towards the wall
+    turn_right(motor_left_percent, motor_right_percent, encoder_right_turn);
+
+    // Drive towards the wall, going forward 8 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 8));
+
+    // Turn right, back faces the button
+    turn_right(motor_left_percent, motor_right_percent, encoder_right_turn);
+
+    // Back into the button, going backwards 20 inches.
+    drive(-motor_left_percent, -motor_right_percent, (encoder_inch * 20));
+    Sleep(7000);
+
+    // Drive forwards from the button, going forward 16 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 16));
+
+    // Turn right, facing the lever
+    turn_right(motor_left_percent, motor_right_percent, encoder_right_turn);
+
+    // Drive forwards towards the lever, forward 15 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 15));
+}
+
+void P_Test_2()
+{
+    // Drive out of the starting area and go forward 10 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 10));
+
+    // Turn left towards the ramp
+    turn_left(motor_left_percent, motor_right_percent, encoder_left_turn);
+
+    // Drive towards the ramp, going forward 12 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 12));
+    test_encoder_counts();
+
+    // Turn left to face the ramp
+    turn_left(motor_left_percent, motor_right_percent, encoder_left_turn);
+
+    // Drive up the ramp, going forward 30 inches.
+    drive(motor_left_percent + 1, motor_right_percent, (encoder_inch * 30));
+
+    // Turn right towards the wall
+    turn_right(motor_left_percent, motor_right_percent, encoder_right_turn);
+
+    // Drive towards the wall, going forward 8 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 8));
+
+    // Turn right, back faces the button
+    turn_right(motor_left_percent, motor_right_percent, encoder_right_turn);
+
+    // Back into the button, going backwards 20 inches.
+    drive(-motor_left_percent, -motor_right_percent, (encoder_inch * 20));
+    Sleep(7000);
+
+    // Drive forwards from the button, going forward 16 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 16));
+
+    // Turn right, facing the lever
+    turn_right(motor_left_percent, motor_right_percent, encoder_right_turn);
+
+    // Drive forwards towards the lever, forward 15 inches.
+    drive(motor_left_percent, motor_right_percent, (encoder_inch * 15));
+
+}
 
 int main() {
     LCD.Clear(FEHLCD::Black);
@@ -172,62 +265,19 @@ int main() {
     LCD.WriteLine("Running."); // Test
 
     // Set the min and max values for the arm's servo motor.
-    arm.SetMin(500);
-    arm.SetMax(2480);
+    arm.SetMin(arm_Min);
+    arm.SetMax(arm_Max);
 
     // Start a timer and enter a loop. Call the light_start() method. When that method returns true or 20 seconds have passed, end the loop.
     int start_time = TimeNow();
     while(!light_start() && TimeNow() - start_time < 20.0);
 
+    //Performance Test 1
+    //P_test_1();
 
-    // Drive out of the starting area and go forward 10 inches.
-    drive(motor_left_percent, motor_right_percent, 405);
-    test_encoder_counts();
+    //Performance Test 2
+    P_test_2();
 
-    // Turn left towards the ramp
-    turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    test_encoder_counts();
-
-    // Drive towards the ramp, going forward 12 inches.
-    drive(motor_left_percent, motor_right_percent, 486);
-    test_encoder_counts();
-
-    // Turn left to face the ramp
-    turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    test_encoder_counts();
-
-    // Drive up the ramp, going forward 30 inches.
-    drive(motor_left_percent + 1, motor_right_percent, 1215);
-    test_encoder_counts();
-
-    // Turn right towards the wall
-    turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    test_encoder_counts();
-
-    // Drive towards the wall, going forward 8 inches.
-    drive(motor_left_percent, motor_right_percent, 324);
-    test_encoder_counts();
-
-    // Turn right, back faces the button
-    turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    test_encoder_counts();
-
-    // Back into the button, going backwards 10 inches.
-    drive(-motor_left_percent, -motor_right_percent, 810);
-    test_encoder_counts();
-    Sleep(8000);
-
-    // Drive forwards from the button, going forward 16 inches.
-    drive(motor_left_percent, motor_right_percent, 648);
-    test_encoder_counts();
-
-    // Turn right, facing the lever
-    turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    test_encoder_counts();
-
-    // Drive forwards towards the lever, forward 15 inches.
-    drive(motor_left_percent, motor_right_percent, 608);
-    test_encoder_counts();
 
     return 0;
 }
