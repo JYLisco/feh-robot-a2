@@ -15,15 +15,20 @@ const int motor_right_percent = 25; //Motor Speed percentage for the right motor
 
 const int arm_Min = 500; // Servo min, for calibration purposes
 const int arm_Max = 2480; // Servo max, for calibration purposes
-const int default_degree = 90; // Default degree servo should be at
+const int default_degree = 90; // Default degree servo should be at.
 
 
 // Encoders
 DigitalEncoder right_encoder(FEHIO::P0_7);
 DigitalEncoder left_encoder(FEHIO::P2_7);
 
-const int encoder_inch = 40; // Number of encoder counts for a single inch.
+const float encoder_inch = 40.5; // Number of encoder counts for a single inch.
+const int encoder_pulse = (int)encoder_inch/8; //Expected encoder counts for the IGWAN Motors when pulsing the drive command for the RPS coordinates.
 
+const int turn_right_counts = 235; // Expected encoder counts for the right IGWAN motor.
+const int turn_left_counts = 228; // Expected encoder counts for the left IGWAN motor.
+const int turn_right_pulse = turn_right_counts/45; //Expected encoder counts for the right IGWAN Motor when pulsing the turn command.
+const int turn_left_pulse = turn_left_counts/45; //Expected encoder counts for the left IGWAN Motor when pulsing the turn command for the RPS.
 
 // Bump Switches
 /*
@@ -33,6 +38,7 @@ DigitalInputPin back_left(FEHIO::);
 DigitalInputPin back_right(FEHIO::);
 */
 
+//CdS Cell
 AnalogInputPin cds_cell(FEHIO::P1_6); // CdS Cell
 
 const double red_light = 0.3; // max value
@@ -44,15 +50,30 @@ AnalogInputPin left_sensor(FEHIO::);
 AnalogInputPin middle_sensor(FEHIO::);
 AnalogInputPin right_sensor(FEHIO::);
 
-const double left_threshold = ;
-const double middle_threshold = ;
-const double right_threshold = ;
+const double left_threshold = 2.0;
+const double middle_threshold = 2.0;
+const double right_threshold = 2.0;
 */
 
+//RPS Constants
+const float tolerance_XY = .15; //Tolerance when determining position using the RPS.
+const int tolerance_heading = 3; //Tolerance when determining heading using the RPS
 
+const int heading_right = 0; //Heading angle for going in the direction from the start to the satellite.
+const int heading_up = 90; //Heading angle for going in the direction up the ramp.
+const int heading_left = 180; //Heading angle for going in the direction from the satellite towards the start.
+const int heading_down = 270; //Heading angle for going in the direction down the ramp.
+
+const float x_bin_light = 12.2, y_bin_light = 16.1;
+const float x_lever = 0, y_lever = 0;
+const float x_button = 0, y_button = 0;
+
+
+
+//Other constants
 const int sleep_time = 200; // The amount of time to sleep between functions.
-const int right_turn_counts = 235; // Expected encoder counts for the right IGWAN motor.
-const int left_turn_counts = 228; // Expected encoder counts for the left IGWAN motor.
+const int timer_start = 20; //The amount of time the robot will wait to move should it not receive CdS Cell input.
+
 
 
 // Prints out the left and ride encoder counts
@@ -93,12 +114,12 @@ bool light_start()
 int light_red_or_blue()
 {
     int light = 0;
-    if(cds_cell.Value() < 0.3)
+    if(cds_cell.Value() < red_light)
     {
         LCD.WriteLine("Light is red."); // return 1
         light = 1;
     }
-    else if(cds_cell.Value() < 0.7)
+    else if(cds_cell.Value() < blue_light)
     {
         LCD.WriteLine("Light is blue."); // return 2
         light = 2;
@@ -178,8 +199,32 @@ void turn_right(int motor_left_percent, int motor_right_percent, int counts) // 
     test_encoder_counts();
     Sleep(sleep_time);
 }
+/*
+void follow_line(int motor_left_percent, int motor_right_percent)
+{
+    left_motor.SetPercent(percent);
+    right_motor.SetPercent(percent);
 
-
+    if(middle_sensor.Value() < middle_threshold)
+    {
+        if(left_sensor.Value() < left_threshold)
+        {
+            right_motor.Stop();
+            if(left_sensor.Value() < left_threshold)
+            {
+                Sleep(sleep_time);
+            }
+        }
+        else if(right_sensor.Value() < right_threshold)
+        {
+            left_motor.Stop();
+            if(right_sensor.Value() < right_threshold)
+            {
+                Sleep(sleep_time);
+            }
+        }
+    }
+}*/
 
 void servo_calibrate()
 {
@@ -208,7 +253,7 @@ void servo_calibrate()
             LCD.Write("x: ");
             LCD.WriteLine(x);
         }
-        Sleep(200);
+        Sleep(sleep_time);
 
     }
 }
@@ -216,19 +261,19 @@ void servo_calibrate()
 void check_x_plus(float x_coordinate) //using RPS while robot is in the +x direction
 {
     //check whether the robot is within an acceptable range
-    while(RPS.X() < x_coordinate - 1 || RPS.X() > x_coordinate + 1)
+    while(RPS.X() < x_coordinate - tolerance_XY || RPS.X() > x_coordinate + tolerance_XY)
     {
         if(RPS.X() > x_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(-motor_left_percent, -motor_right_percent, 20);
+            drive(-motor_left_percent, -motor_right_percent, encoder_pulse);
         }
         else if(RPS.X() < x_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(motor_left_percent, motor_right_percent, 20);
+            drive(motor_left_percent, motor_right_percent, encoder_pulse);
         }
     }
 }
@@ -236,19 +281,19 @@ void check_x_plus(float x_coordinate) //using RPS while robot is in the +x direc
 void check_x_minus(float x_coordinate) //using RPS while robot is in the +x direction
 {
     //check whether the robot is within an acceptable range
-    while(RPS.X() < x_coordinate - 1 || RPS.X() > x_coordinate + 1)
+    while(RPS.X() < x_coordinate - tolerance_XY || RPS.X() > x_coordinate + tolerance_XY)
     {
         if(RPS.X() > x_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(motor_left_percent, motor_right_percent, 20);
+            drive(motor_left_percent, motor_right_percent, encoder_pulse);
         }
         else if(RPS.X() < x_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(-motor_left_percent, -motor_right_percent, 20);
+            drive(-motor_left_percent, -motor_right_percent, encoder_pulse);
         }
     }
 }
@@ -256,19 +301,19 @@ void check_x_minus(float x_coordinate) //using RPS while robot is in the +x dire
 void check_y_minus(float y_coordinate) //using RPS while robot is in the -y direction
 {
     //check whether the robot is within an acceptable range
-    while(RPS.Y() < y_coordinate - 1 || RPS.Y() > y_coordinate + 1)
+    while(RPS.Y() < y_coordinate - tolerance_XY || RPS.Y() > y_coordinate + tolerance_XY)
     {
         if(RPS.Y() > y_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(motor_left_percent, motor_right_percent, 20);
+            drive(motor_left_percent, motor_right_percent, encoder_pulse);
         }
         else if(RPS.Y() < y_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(-motor_left_percent, -motor_right_percent, 20);
+            drive(-motor_left_percent, -motor_right_percent, encoder_pulse);
         }
     }
 }
@@ -276,19 +321,19 @@ void check_y_minus(float y_coordinate) //using RPS while robot is in the -y dire
 void check_y_plus(float y_coordinate) //using RPS while robot is in the +y direction
 {
     //check whether the robot is within an acceptable range
-    while(RPS.Y() < y_coordinate - 1 || RPS.Y() > y_coordinate + 1)
+    while(RPS.Y() < y_coordinate - tolerance_XY || RPS.Y() > y_coordinate + tolerance_XY)
     {
         if(RPS.Y() > y_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(-motor_left_percent, -motor_right_percent, 20);
+            drive(-motor_left_percent, -motor_right_percent, encoder_pulse);
         }
         else if(RPS.Y() < y_coordinate)
         {
             //pulse the motors for a short duration in the correct direction
 
-            drive(motor_left_percent, motor_right_percent, 20);
+            drive(motor_left_percent, motor_right_percent, encoder_pulse);
         }
     }
 }
@@ -300,26 +345,32 @@ void check_heading(float heading) //using RPS
     //the edge conditions (when you want the robot to go to 0 degrees
     //or close to 0 degrees)
 
-    while(RPS.Heading() < heading - 3 || RPS.Heading() > heading + 3)
+    while(RPS.Heading() < heading - tolerance_heading || RPS.Heading() > heading + tolerance_heading)
     {
         if(RPS.Heading() > heading)
         {
             //pulse the motors for a short duration in the correct direction
 
-            turn_right(motor_left_percent, motor_right_percent, right_turn_counts/45);
+            turn_right(motor_left_percent, motor_right_percent, turn_right_pulse);
         }
         else if(RPS.Heading() < heading)
         {
             //pulse the motors for a short duration in the correct direction
 
-            turn_left(motor_left_percent, motor_right_percent,left_turn_counts/45);
+            turn_left(motor_left_percent, motor_right_percent,turn_left_pulse);
 
         }
-        Sleep(200);
+        Sleep(sleep_time);
     }
-    Sleep(200);
+    Sleep(sleep_time);
 
 
+}
+
+void arm_adjust(int angle)
+{
+    arm.SetDegree(angle);
+    Sleep(sleep_time);
 }
 
 int main() {
@@ -346,69 +397,73 @@ int main() {
     // Start a timer and enter a loop. Call the light_start() method.
     // When that method returns true or 20 seconds have passed, end the loop.
     int start_time = TimeNow();
-    while(!light_start() && TimeNow() - start_time < 20.0);
+    while(!light_start() && TimeNow() - start_time < timer_start);
 
 
     // Drive out of the starting area and go forward 10 inches.
-    drive(motor_left_percent, motor_right_percent, 405 );
+    drive(motor_left_percent, motor_right_percent, (int)encoder_inch*10 );
 
     // Turn left towards the ramp
-    turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
+    turn_left(motor_left_percent, motor_right_percent, turn_left_counts);
 
 
     // Drive towards the ramp, going forward 12 inches.
-    drive(motor_left_percent, motor_right_percent, 486);
+    drive(motor_left_percent, motor_right_percent, (int)encoder_inch*12);
 
     // Turn left to face the ramp
-    turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    check_heading(90);
+    turn_left(motor_left_percent, motor_right_percent, turn_left_counts);
+    check_heading(heading_up);
 
     // Raise arm up so it does not hit the ramp
-    arm.SetDegree(130);
-    Sleep(sleep_time);
+    arm_adjust(130);
 
     // Drive up the ramp, going forward 28 inches.
-    drive(motor_left_percent + 5, motor_right_percent + 5, 1134);
-    check_heading(90);
+    drive(motor_left_percent + 5, motor_right_percent + 5, (int)encoder_inch*28);
+    check_heading(heading_up);
 
     // Turn left to face the lever
-    turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    check_heading(180);
+    turn_left(motor_left_percent, motor_right_percent, turn_left_counts);
+    check_heading(heading_left);
 
-    // Drive forward 2 inches
-    drive(motor_left_percent, motor_right_percent, 81);
+    // Drive forward 2 inches towards the lever.
+    drive(motor_left_percent, motor_right_percent, (int)encoder_inch*2);
 
-    // Lower arm
-    arm.SetDegree(115);
+    // Lower arm to hit the lever.
+    arm_adjust(115);
     Sleep(sleep_time);
 
-    // Raise arm
-    arm.SetDegree(130);
+    // Raise arm back to upper position.
+    arm_adjust(130);
+
+    // Lower arm to hit the lever.
+    arm_adjust(115);
     Sleep(sleep_time);
 
-    // Back up 4 inches
-    drive(-motor_left_percent, -motor_right_percent,162);
+    // Raise arm back to upper position.
+    arm_adjust(130);
 
-    // Turn left
-    turn_left(motor_left_percent, motor_right_percent, left_turn_counts);
-    check_heading(270);
+    // Back up 4 inches towards the ramp entrance.
+    drive(-motor_left_percent, -motor_right_percent,(int)encoder_inch*4);
 
-    // Drive forward 28 inches
-    drive(motor_left_percent, motor_right_percent, 1134);
-    check_heading(270);
-    check_y_minus(15.5);
+    // Turn left towards the ramp.
+    turn_left(motor_left_percent, motor_right_percent, turn_left_counts);
+    check_heading(heading_down);
 
-    // Turn right
-    turn_right(motor_left_percent, motor_right_percent, right_turn_counts);
-    check_heading(180);
+    // Drive forward 28 inches down the ramp.
+    drive(motor_left_percent, motor_right_percent, (int)encoder_inch*28);
+    check_heading(heading_down);
+    check_y_minus(y_bin_light);
 
-    // Lower arm
-    arm.SetDegree(default_degree);
-    Sleep(sleep_time);
+    // Turn right towards the bin light.
+    turn_right(motor_left_percent, motor_right_percent, turn_right_counts);
+    check_heading(heading_left);
 
-    // Drive forward 4 inches
-    drive(motor_left_percent, motor_right_percent, 162);
-    check_x_minus(12.5);
+    // Lower arm back to default position.
+    arm_adjust(default_degree);
+
+    // Drive forward 4 inches towards the bin light.
+    drive(motor_left_percent, motor_right_percent, (int)encoder_inch*4);
+    check_x_minus(x_bin_light);
 
     int num = light_red_or_blue();
 
